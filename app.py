@@ -4,6 +4,8 @@ from tempfile import NamedTemporaryFile
 
 app = FastAPI()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello"}
+@app.post("/transcribe/")
+
+@app.get("/", response_class=RedirectResponse)
+async def redirect_to_docs():
+    return "/docs"
