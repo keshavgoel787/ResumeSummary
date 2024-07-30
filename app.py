@@ -1,15 +1,14 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
-from tempfile import NamedTemporaryFile
+from fastapi.responses  import JSONResponse, RedirectResponse
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 import os
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-from dotenv import load_dotenv, dotenv_values 
+from dotenv import load_dotenv
 from botocore.client import Config
 import ollama 
 import httpx
 import PyPDF2
-
 
 app = FastAPI()
 
@@ -48,44 +47,35 @@ def summarize_resume(text):
         print(f"An unexpected error occurred while summarizing the resume: {e}")
         return None
 
-
 session = boto3.session.Session()
-
 client = session.client('s3',
-                        endpoint_url = os.getenv('endpoint'), 
-                        region_name = 'nyc3',
-                        aws_access_key_id = os.getenv('ACCESS_KEY_ID'),
-                        aws_secret_access_key = os.getenv('SECRET_ACCESS_KEY'))
-
-if not os.path.exists('temp'):
-    os.makedirs('temp')
-
+                        endpoint_url=os.getenv('endpoint'), 
+                        region_name='nyc3',
+                        aws_access_key_id=os.getenv('ACCESS_KEY_ID'),
+                        aws_secret_access_key=os.getenv('SECRET_ACCESS_KEY'))
 
 @app.post("/transcribe/")
 async def transcribe_audio(filekey: str):
-    try:
-        file_location = f"temp/{filekey}"
+    with TemporaryDirectory() as temp_dir:
+        file_location = os.path.join(temp_dir, filekey)
         try:
             client.download_file(os.getenv('Bucket'), filekey, file_location)
         except (NoCredentialsError, PartialCredentialsError) as e:
             raise HTTPException(status_code=403, detail="Credentials error")
 
         extracted = extract_text_from_pdf(file_location)
-
-        os.remove(file_location)
+        if extracted is None:
+            raise HTTPException(status_code=500, detail="Failed to extract text from PDF")
 
         insights = summarize_resume(extracted)
+        if insights is None:
+            raise HTTPException(status_code=500, detail="Failed to summarize resume")
 
-        client.put_object(Bucket = os.getenv('Bucket'), Key = filekey + ' Summary', Body = insights)
+        client.put_object(Bucket=os.getenv('Bucket'), Key=filekey + ' Summary', Body=insights)
 
-        #returns transcription
-        return JSONResponse(content={"transcription": "Summary Uploaded Succesfully"})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        # returns transcription
+        return JSONResponse(content={"transcription": "Summary Uploaded Successfully"})
 
 @app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
     return "/docs"
-
-
