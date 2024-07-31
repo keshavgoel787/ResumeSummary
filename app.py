@@ -26,6 +26,8 @@ def extract_text_from_pdf(pdf_path):
     except Exception as e:
         print(f"An error occurred while extracting text from the PDF: {e}")
         return None
+    
+
 
 def summarize_resume(text):
     try:
@@ -47,6 +49,24 @@ def summarize_resume(text):
         print(f"An unexpected error occurred while summarizing the resume: {e}")
         return None
 
+def generate_project_questions(projects_text):
+    try:
+        response = ollama.chat(model='llama3', messages=[
+            {
+                "role": "user",
+                "content": 'The following text is a list of projects from an applicant\'s resume. I want you to generate five specific questions related to these projects that could be asked in an interview. The purpose of the questions should be to understand the depth of knowledge that the applicant. Do not include anything else except for the numbered questions, nothing else at all. Do not provide an introduction. Here is the project list: ' + projects_text,
+            },
+        ])
+        return response['message']['content']
+    except httpx.RequestError as e:
+        print(f"An HTTP request error occurred: {e}")
+        return None
+    except httpx.HTTPStatusError as e:
+        print(f"An HTTP status error occurred: {e.response.status_code} - {e.response.text}")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred while generating questions: {e}")
+        return None
 session = boto3.session.Session()
 client = session.client('s3',
                         endpoint_url=os.getenv('endpoint'), 
@@ -67,14 +87,17 @@ async def transcribe_audio(filekey: str):
         if extracted is None:
             raise HTTPException(status_code=500, detail="Failed to extract text from PDF")
 
+        """"
         insights = summarize_resume(extracted)
         if insights is None:
             raise HTTPException(status_code=500, detail="Failed to summarize resume")
+        
+        questions = generate_project_questions(insights)
 
-        client.put_object(Bucket=os.getenv('Bucket'), Key=filekey + ' Summary', Body=insights)
-
+        client.put_object(Bucket=os.getenv('Bucket'), Key=filekey + ' Summary', Body=insights+questions)
+        """
         # returns transcription
-        return JSONResponse(content={"transcription": "Summary Uploaded Successfully"})
+        return JSONResponse(content={"transcription": extracted})
 
 @app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
