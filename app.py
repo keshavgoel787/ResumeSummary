@@ -60,7 +60,7 @@ client = session.client('s3',
                         aws_secret_access_key=os.getenv('SECRET_ACCESS_KEY'))
 
 @app.post("/transcribe/")
-async def transcribe_audio(filekey: str):
+async def transcribe_audio():
         response = model.generate_content("Hello what is your name")
         response = str(response)
         # returns transcription
