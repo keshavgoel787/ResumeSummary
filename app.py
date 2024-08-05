@@ -14,6 +14,10 @@ app = FastAPI()
 
 load_dotenv()
 
+key = os.getenv('GEMINI_API_KEY')
+
+genai.configure(api_key=key)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 
 def extract_text_from_pdf(pdf_path):
