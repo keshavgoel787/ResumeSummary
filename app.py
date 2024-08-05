@@ -1,14 +1,14 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses  import JSONResponse, RedirectResponse
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+#from tempfile import NamedTemporaryFile, TemporaryDirectory
 import os
-import boto3
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+#import boto3
+#from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from dotenv import load_dotenv
-from botocore.client import Config
-import httpx
-import PyPDF2
-import google.generativeai as genai
+#from botocore.client import Config
+#import httpx
+#import PyPDF2
+#import google.generativeai as genai
 
 app = FastAPI()
 
