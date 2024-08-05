@@ -14,6 +14,22 @@ app = FastAPI()
 
 load_dotenv()
 
+@app.post("/transcribe/")
+async def root():
+    key = os.getenv('GEMINI_API_KEY')
+    if not key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set")
+
+    return JSONResponse(content={"transcription": "Summary Successfully Created"})
+
+@app.get("/", response_class=RedirectResponse)
+async def redirect_to_docs():
+    return "/docs"
+
+
+
+
+"""
 key = os.getenv('GEMINI_API_KEY')
 
 genai.configure(api_key=key)
@@ -78,11 +94,11 @@ async def transcribe_audio(filekey: str):
             raise HTTPException(status_code=500, detail="Failed to summarize resume")
       
 
-        #client.put_object(Bucket=os.getenv('Bucket'), Key=filekey + ' Summary', Body=insights+questions)
+        client.put_object(Bucket=os.getenv('Bucket'), Key=filekey + ' Summary', Body=insights)
 
-        # returns transcription
-        return JSONResponse(content={"transcription": insights})
+        return JSONResponse(content={"transcription": "Summary Successfully Created"})
 
 @app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
     return "/docs"
+"""
