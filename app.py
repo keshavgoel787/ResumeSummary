@@ -1,39 +1,19 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses  import JSONResponse, RedirectResponse
-#from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 import os
-#import boto3
-#from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+import boto3
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from dotenv import load_dotenv
-#from botocore.client import Config
-#import httpx
-#import PyPDF2
-#import google.generativeai as genai
+from botocore.client import Config
+import httpx
+import PyPDF2
+import google.generativeai as genai
 
 app = FastAPI()
 
 load_dotenv()
 
-@app.post("/transcribe/")
-async def root():
-    key = os.getenv('GEMINI_API_KEY')
-    if not key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set")
-
-    return JSONResponse(content={"transcription": "Summary Successfully Created"})
-
-@app.get("/", response_class=RedirectResponse)
-async def redirect_to_docs():
-    return "/docs"
-
-
-
-
-"""
-key = os.getenv('GEMINI_API_KEY')
-
-genai.configure(api_key=key)
-model = genai.GenerativeModel('gemini-1.5-flash')
 
 
 def extract_text_from_pdf(pdf_path):
@@ -101,4 +81,3 @@ async def transcribe_audio(filekey: str):
 @app.get("/", response_class=RedirectResponse)
 async def redirect_to_docs():
     return "/docs"
-"""
