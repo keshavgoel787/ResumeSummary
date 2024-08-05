@@ -59,8 +59,8 @@ client = session.client('s3',
                         aws_access_key_id=os.getenv('ACCESS_KEY_ID'),
                         aws_secret_access_key=os.getenv('SECRET_ACCESS_KEY'))
 
-@app.post("/transcribe/")
-async def transcribe_audio(filekey: str):
+@app.post("/summarize/")
+async def summarize(filekey: str):
     with TemporaryDirectory() as temp_dir:
         file_location = os.path.join(temp_dir, filekey)
         try:
