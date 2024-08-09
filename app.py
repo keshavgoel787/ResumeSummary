@@ -9,6 +9,7 @@ import httpx
 import PyPDF2
 import google.generativeai as genai
 import spacy
+from pymongo import MongoClient
 
 app = FastAPI()
 
@@ -18,6 +19,24 @@ key = os.getenv('GEMINI_API_KEY')
 
 genai.configure(api_key=key)
 model = genai.GenerativeModel('gemini-1.5-flash')
+
+client = MongoClient(os.getenv('mongoURL'), username= os.getenv('username'), password = os.getenv('password'))  # Adjust the URI accordingly
+db = client['admin']
+mycol = db['ResumeSummary']
+
+def insert(ResumeName, Company, Position, YOE, Skills, Experiences, Projects, Awards):
+    myquery = {'ResumeName': ResumeName,
+        'Company': Company,
+        'Position': Position,
+        'Years of Experience': YOE, 
+        "Skills": Skills, 
+        "Experiences": Experiences, 
+        "Projects": Projects, 
+        "Awards": Awards}
+
+    cursor = mycol.find(myquery)
+
+    if(len(list(cursor)) == 0): mycol.insert_one(myquery)
 
 
 def extract_text_from_pdf(pdf_path):
@@ -50,7 +69,6 @@ def summarize_resume(text):
         print(f"An unexpected error occurred while summarizing the resume: {e}")
         return None
 
-
 def parse_summary_with_spacy(summary_text):
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(summary_text)
@@ -59,6 +77,8 @@ def parse_summary_with_spacy(summary_text):
     experiences = []
     projects = []
     awards = []
+
+    result = {}
 
     current_category = None
 
@@ -113,7 +133,7 @@ async def summarize(filekey: str):
     with TemporaryDirectory() as temp_dir:
         file_location = os.path.join(temp_dir, filekey)
         try:
-            client.download_file(os.getenv('Bucket'), filekey, file_location)
+            client.download_file(os.getenv('Bucket1'), filekey, file_location)
         except (NoCredentialsError, PartialCredentialsError) as e:
             raise HTTPException(status_code=403, detail="Credentials error")
 
@@ -128,15 +148,17 @@ async def summarize(filekey: str):
         parse_data = parse_summary_with_spacy(insights)
         if parse_data is None:
             raise HTTPException(status_code=500, detail="Failed to parse resume")
+        
+        insert(filekey, " ", " ", parse_data['Years of Experience'], parse_data["Skills"], parse_data["Experiences"], parse_data['Projects'], parse_data['Awards'])
 
         with NamedTemporaryFile(delete=True) as temp_file:
             for key, value in parse_data.items():
                 temp_file.write(f'{key}:{value}\n'.encode('utf-8'))
             temp_file.flush()  # Ensure data is written
 
-            client.upload_file(temp_file.name, os.getenv('Bucket'), filekey + ' Summary')
+            client.upload_file(temp_file.name, os.getenv('Bucket2'), filekey + ' Summary')
 
-        return JSONResponse(content={"transcription": "Summary Successfully Uploaded"})
+        return JSONResponse(content={"transcription": "Summary Uploaded Successfully"})
 
 
 @app.get("/", response_class=RedirectResponse)
